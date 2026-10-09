@@ -20,7 +20,7 @@ export function HubArtwork(){
  const c=[210,210],r1=95,r2=160;
  const inner:[[number,number],[number,number],[number,number],[number,number]]=[[210,115],[305,210],[210,305],[115,210]];
  const outer:[[number,number],[number,number],[number,number],[number,number]]=[[323,97],[323,323],[97,323],[97,97]];
- const links=inner.flatMap((p,i)=>[outer[i],outer[(i+3)%4]].map(q=>({p,q})));
+ const links=inner.flatMap((p,i)=>[outer[i]!,outer[(i+3)%4]!].map(q=>({p,q})));
  return <div className="botanical-art" aria-hidden="true">
   <svg className="hub-art" viewBox="0 0 420 420" width="420" height="420" role="img">
    <circle cx={c[0]} cy={c[1]} r={r1} fill="none" stroke="var(--art-rule)" strokeWidth="1.4" strokeDasharray="3 7"/>
