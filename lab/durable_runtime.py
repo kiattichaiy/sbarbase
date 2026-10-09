@@ -68,7 +68,7 @@ def hba_content(environments):
 
 # The installation-wide environment guard. src/control/catalog.ts ENVIRONMENT_LIMIT mirrors it
 # so the API refuses before queueing; tests/hierarchy.test.ts checks the two agree.
-ENVIRONMENT_LIMIT = 4
+ENVIRONMENT_LIMIT = 8
 
 
 def available_memory_bytes():

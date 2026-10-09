@@ -24,7 +24,8 @@ function StudioSection({path,request}:{path:string;request:Api}){
   // Opened before the request so the browser does not treat it as an unrequested pop-up.
   const tab=window.open('about:blank','_blank');setError('');
   try{const {host,path:entry}=await request(path+'/studio/session','POST') as {host:string;path:string};
-   const url=`${location.protocol}//${host}${location.port?':'+location.port:''}${entry}`;
+   const envSegment=(host.match(/^([a-f0-9]{24})\.studio\.localhost$/)||[])[1];
+   const url=['127.0.0.1','localhost'].includes(location.hostname)?`${location.protocol}//${host}${location.port?':'+location.port:''}${entry}`:`${location.protocol}//${location.hostname}:8443${envSegment?'/e_'+envSegment:''}${entry}`;
    if(tab){tab.opener=null;tab.location.href=url;}else location.href=url;}
   catch(e){tab?.close();setError((e as Error).message);}
  }

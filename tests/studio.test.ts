@@ -68,10 +68,10 @@ test('the console starts, stops and opens Studio only for owners and admins of a
 });
 
 test('the Studio origin admits a ticket once, then only its session cookie, and never another environment',async()=>{
- const seen:Request[]=[];
+ const seen:Request[]=[];const inits:(RequestInit|undefined)[]=[];
  let members=new Set(['alice']);
  const proxy=studioProxy({key:()=>key,allowed:actor=>members.has(actor),upstream:runtime=>runtime===A?'http://studio-a.internal:3000':undefined,
-  transport:(async(input:URL|RequestInfo,init?:RequestInit)=>{seen.push(new Request(input,init));
+  transport:(async(input:URL|RequestInfo,init?:RequestInit)=>{seen.push(new Request(input,init));inits.push(init);
    return new Response('studio page',{status:200,headers:{'set-cookie':'studio_theme=dark; Path=/'}});}) as typeof fetch});
  const ticket=signStudio(key,{runtime:A,actor:'alice',expires:Date.now()+60_000,kind:'ticket'});
  const enter=await proxy(new Request(`http://${studioHost(A)}:8790/__sbarbase/enter?ticket=${encodeURIComponent(ticket)}`));
@@ -89,6 +89,9 @@ test('the Studio origin admits a ticket once, then only its session cookie, and 
  expect(seen[0]!.url).toBe('http://studio-a.internal:3000/project/default?x=1');
  // Studio never sees Sbarbase's own cookie.
  expect(seen[0]!.headers.get('cookie')).toBe('studio_theme=dark');
+ // The proxy must not decode the body: Bun's fetch decompresses by default, which would
+ // leave a stale content-encoding header over already-decoded bytes.
+ expect((inits[0] as {decompress?:boolean}|undefined)?.decompress).toBe(false);
  // A session for A does not open B, even if a browser sent it there.
  expect((await proxy(new Request(`http://${studioHost(B)}/project/default`,{headers:{cookie:session}}))).status).toBe(401);
  // A ticket for A does not enter B.
@@ -99,11 +102,11 @@ test('the Studio origin admits a ticket once, then only its session cookie, and 
 });
 
 test('Studio server-side calls reach only their own environment, with its own service key',async()=>{
- const seen:Request[]=[];
+ const seen:Request[]=[];const inits:(RequestInit|undefined)[]=[];
  const upstream=studioUpstream({
   endpoints:runtime=>runtime===A?{auth:'http://auth-a:9999',rest:'http://rest-a:3000',storage:{url:'http://storage:5000',tenantHost:A+'.storage.internal'}}:undefined,
   secret:runtime=>runtime===A?'secret-a':runtime===B?'secret-b':undefined,active:()=>true,
-  transport:(async(input:URL|RequestInfo,init?:RequestInit)=>{seen.push(new Request(input,init));return Response.json({ok:true});}) as typeof fetch});
+  transport:(async(input:URL|RequestInfo,init?:RequestInit)=>{seen.push(new Request(input,init));inits.push(init);return Response.json({ok:true});}) as typeof fetch});
  const service=jwt('secret-a',{role:'service_role'});
  const call=(path:string,token:string,method='GET')=>upstream(new Request('http://172.18.0.1:54320'+path,
   {method,headers:{authorization:'Bearer '+token,apikey:token}}));
@@ -121,6 +124,7 @@ test('Studio server-side calls reach only their own environment, with its own se
  expect((await call(`/${B}/auth/v1/admin/users`,service)).status).toBe(503);
  expect((await call('/other/path',service)).status).toBe(404);
  expect(seen.length).toBe(3);
+ expect(inits.every(init=>(init as {decompress?:boolean}|undefined)?.decompress===false)).toBe(true);
  expect(serviceKey(service,'secret-a')).toBe(true);
  expect(serviceKey(service,'secret-b')).toBe(false);
 });

@@ -115,7 +115,7 @@ function credentialShape(value:string):boolean {
 /** Environments one installation may hold. Mirrors ENVIRONMENT_LIMIT in lab/durable_runtime.py,
  * which stays the enforcing check; this one refuses before a job is queued, so the request
  * answers 409 instead of queueing work the worker must then refuse. */
-export const ENVIRONMENT_LIMIT=4;
+export const ENVIRONMENT_LIMIT=8;
 
 /** Bumped with each step of Catalog.migrate(). */
 export const CATALOG_SCHEMA_VERSION=3;

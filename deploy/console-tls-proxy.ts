@@ -254,6 +254,7 @@ const secure = Bun.serve<Bridge>({
         },
         body,
         redirect: 'manual',
+        decompress: false,
         ...(body instanceof ReadableStream ? {duplex: 'half'} : {}),
       } as RequestInit);
       const output = new Headers(forwarded.headers);

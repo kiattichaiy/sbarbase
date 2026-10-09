@@ -122,7 +122,7 @@ export function studioProxy(options:{key:()=>Buffer;allowed:(actor:string,runtim
   for(const [name,value] of request.headers)if(!HOP.has(name))headers.set(name,value);
   const cookies=withoutCookie(request.headers.get('cookie'),STUDIO_COOKIE);
   if(cookies)headers.set('cookie',cookies);else headers.delete('cookie');
-  const response=await transport(new URL(url.pathname+url.search,target),{method:request.method,headers,redirect:'manual',
+  const response=await transport(new URL(url.pathname+url.search,target),{method:request.method,headers,redirect:'manual',decompress:false,
    ...(['GET','HEAD'].includes(request.method)?{}:{body:request.body,duplex:'half'})} as RequestInit);
   const out=new Headers();
   for(const [name,value] of response.headers)if(!HOP.has(name)&&name!=='set-cookie')out.set(name,value);
@@ -158,7 +158,7 @@ export function studioUpstream(options:{endpoints:(runtime:string)=>Endpoints|un
    if(!endpoints.storage)return Response.json({message:'Unavailable'},{status:503});
    base=endpoints.storage.url;headers.set('x-forwarded-host',endpoints.storage.tenantHost);
   }
-  const response=await transport(new URL(rest+url.search,base),{method:request.method,headers,redirect:'manual',
+  const response=await transport(new URL(rest+url.search,base),{method:request.method,headers,redirect:'manual',decompress:false,
    ...(['GET','HEAD'].includes(request.method)?{}:{body:request.body,duplex:'half'})} as RequestInit);
   const out=new Headers();
   for(const [name,value] of response.headers)if(!HOP.has(name))out.set(name,value);
