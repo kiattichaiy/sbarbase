@@ -28,7 +28,7 @@ export function MetricsSection({path,request}:{path:string;request:Api}){
  const data=useData<{data:Metrics}>(signal=>request(path+'/metrics','GET',undefined,signal),[path,request]);
  const metrics=data.data?.data;
  return <section className="details"><div className="section-heading"><h2>Usage</h2><Refresh onClick={data.refresh}/></div>
-  <p className="muted small">Requests through the API in the last hour. Counting starts again when Sbarbase restarts.</p>
+  <p className="muted small">Requests through the API in the last hour. Counting starts again when BaseHub restarts.</p>
   <ErrorMessage message={data.error}/>{data.loading?<Loading/>:metrics&&<>
    <div className="stats">
     <div><span className="muted small">Requests</span><strong>{metrics.window.requests}</strong></div>

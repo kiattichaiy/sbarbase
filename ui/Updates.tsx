@@ -84,18 +84,18 @@ const inProgress=(progress:UpdatesController['progress'])=>Boolean(progress&&pro
  * an upgrade under way. Each notice states itself in words, not by colour alone. */
 export function UpdateBanners({onOpen,onPage}:{onOpen:()=>void;onPage:boolean}){
  const updates=useUpdatesState(),open=onPage?null:<button className="secondary" onClick={onOpen}>View updates</button>;
- if(inProgress(updates.progress))return <div className="update-banner" role="status"><RefreshCw aria-hidden="true"/><p>An update is in progress. The console may disconnect for a few minutes while Sbarbase restarts.</p>{open}</div>;
+ if(inProgress(updates.progress))return <div className="update-banner" role="status"><RefreshCw aria-hidden="true"/><p>An update is in progress. The console may disconnect for a few minutes while BaseHub restarts.</p>{open}</div>;
  const watch=updates.progress?.watch;
  // Wherever the operator waited, a confirmed upgrade asks for a reload so the new console loads.
  if(watch&&watch.kind==='apply'&&updates.progress?.delay===null&&watchStage(watch)==='confirmed')
-  return <div className="update-banner done" role="status"><CircleCheck aria-hidden="true"/><p>Sbarbase was updated{watch.view?.last?.version?' to '+watch.view.last.version:''}. Reload the console so it loads the new version.</p><button className="primary" onClick={()=>location.reload()}><RotateCcw aria-hidden="true"/>Reload console</button></div>;
+  return <div className="update-banner done" role="status"><CircleCheck aria-hidden="true"/><p>BaseHub was updated{watch.view?.last?.version?' to '+watch.view.last.version:''}. Reload the console so it loads the new version.</p><button className="primary" onClick={()=>location.reload()}><RotateCcw aria-hidden="true"/>Reload console</button></div>;
  const shown=banners(updates.view,updates.dismissed);
  if(!shown.length)return null;
  return <>{shown.map(banner=>{
   const close=banner.dismissible?<button className="banner-close" aria-label="Dismiss this notice" title="Dismiss" onClick={()=>updates.dismiss(banner.key)}><X aria-hidden="true"/></button>:null;
   if(banner.kind==='rollback_failed')return <div key={banner.key} className="update-banner critical" role="alert"><OctagonAlert aria-hidden="true"/><p><strong>The update failed and so did the way back.</strong> Restore from the backups taken before the upgrade. <a href={BACKUP_GUIDE} target="_blank" rel="noreferrer">How to restore<ExternalLink aria-hidden="true"/></a></p>{open}</div>;
   if(banner.kind==='rolled_back')return <div key={banner.key} className="update-banner" role="status"><Undo2 aria-hidden="true"/><p>{STAGE_TEXT.rolled_back}</p>{open}{close}</div>;
-  if(banner.kind==='confirmed')return <div key={banner.key} className="update-banner done" role="status"><CircleCheck aria-hidden="true"/><p>Sbarbase was updated to {banner.version}.</p>{close}</div>;
+  if(banner.kind==='confirmed')return <div key={banner.key} className="update-banner done" role="status"><CircleCheck aria-hidden="true"/><p>BaseHub was updated to {banner.version}.</p>{close}</div>;
   if(banner.kind==='newest')return <div key={banner.key} className="update-banner" role="status"><Info aria-hidden="true"/><p>{newestText(banner)}</p>{open}{close}</div>;
   return <div key={banner.key} className="update-banner" role="status"><CircleArrowUp aria-hidden="true"/><p>{availableText(banner)}</p>{open}{close}</div>;
  })}</>;
@@ -153,7 +153,7 @@ function Settings({updates,settings,timezone}:{updates:UpdatesController;setting
  async function save(){setBusy(true);setError('');setSaved('');try{await updates.saveSettings(form);setSaved('Settings saved.');}catch(e){setError(message(e));}finally{setBusy(false);}}
  return <section className="details"><h2>Settings</h2>
   <label className="check"><input type="checkbox" checked={form.check} onChange={event=>setForm({...form,check:event.target.checked,automatic:event.target.checked&&form.automatic})}/>Check for new releases</label>
-  <p className="small muted">Sbarbase looks for a newer signed release every 6 hours and shows it here. Checking never installs anything.</p>
+  <p className="small muted">BaseHub looks for a newer signed release every 6 hours and shows it here. Checking never installs anything.</p>
   <label className="check"><input type="checkbox" checked={form.automatic} disabled={!form.check} onChange={event=>setForm({...form,automatic:event.target.checked})}/>Install safe updates automatically</label>
   <p className="small muted">{form.check?'Only safe, signed releases install by themselves, and only inside the maintenance window. A release that changes environment databases always waits for you, and one that rolled back is never tried again automatically.':'Turn on checking first: automatic updates need it.'}</p>
   {form.automatic&&<div className="window"><h3>Maintenance window</h3><div className="window-row">
@@ -182,8 +182,8 @@ function Skipped({notes}:{notes:string[]}){
 /** The newest release when it is not the one on offer: that it exists, and why it is not offered. */
 function Newest({release,offered,notes}:{release:NewestRelease;offered:boolean;notes:string[]}){
  return <section className="details" aria-labelledby="newest-heading">
-  <div className="section-heading"><h2 id="newest-heading">{offered?'Also released: ':'Newer release: '}Sbarbase {release.version}</h2>{release.class&&<ClassBadge value={release.class}/>}</div>
-  <p className="small muted">Tag <code>{release.tag}</code>. {release.signed?'Signed by a Sbarbase release key.':'Not signed by a Sbarbase release key.'}</p>
+  <div className="section-heading"><h2 id="newest-heading">{offered?'Also released: ':'Newer release: '}BaseHub {release.version}</h2>{release.class&&<ClassBadge value={release.class}/>}</div>
+  <p className="small muted">Tag <code>{release.tag}</code>. {release.signed?'Signed by a BaseHub release key.':'Not signed by a BaseHub release key.'}</p>
   <p>{offered?'This installation cannot install it, so the newest release it can install is offered instead.':'This installation cannot install it.'}</p>
   {release.reasons.length>0&&<><h3>Why</h3><ul className="plain-list">{release.reasons.map(reason=><li key={reason}>{reason}</li>)}</ul></>}
   {release.class==='manual'&&<p>It needs a manual migration on the server. <a href={UPGRADES_GUIDE} target="_blank" rel="noreferrer">Read the upgrades guide<ExternalLink aria-hidden="true"/></a></p>}
@@ -203,7 +203,7 @@ export function Updates(){
   try{await updates.begin(kind,version,acknowledgement);setConfirm(undefined);setAcknowledged(false);}catch(e){setError(message(e));}finally{setSending(false);}
  }
  async function check(){setChecking(true);setError('');try{await updates.begin('check');}catch(e){setError(message(e));}finally{setChecking(false);}}
- const heading=<div className="page-heading"><div><h1>Updates</h1><p className="muted">Sbarbase versions for this installation. Only the installation operator sees this page.</p></div></div>;
+ const heading=<div className="page-heading"><div><h1>Updates</h1><p className="muted">BaseHub versions for this installation. Only the installation operator sees this page.</p></div></div>;
  if(!view)return <>{heading}<ErrorMessage message={updates.error}/>{updates.loading?<Loading/>:updates.error&&<button className="secondary" onClick={updates.refresh}><RefreshCw aria-hidden="true"/>Refresh</button>}</>;
  const release=view.available,state=installState(view),watch=updates.progress?.watch;
  const checkRunning=Boolean(checking||watch?.kind==='check'&&updates.progress?.delay!==null);
@@ -214,14 +214,14 @@ export function Updates(){
   {watch&&watch.kind!=='check'&&<Progress key={watch.since} updates={updates}/>}
   <ErrorMessage message={error}/>
   <section className="details"><h2>Installed version</h2>
-   <p><strong>Sbarbase {view.current.version}</strong> <code>{view.current.commit.slice(0,12)}</code></p>
+   <p><strong>BaseHub {view.current.version}</strong> <code>{view.current.commit.slice(0,12)}</code></p>
    <p className="small muted">{view.settings.check?'Last checked: '+formatWhen(view.checkedAt):'Checking for new releases is off.'}</p>
    {view.checkError&&<p className="notice">The last check did not finish: {view.checkError}</p>}
    <div className="form-row"><button disabled={checkRunning||moving} onClick={()=>void check()}><RefreshCw aria-hidden="true"/>{checkRunning?'Checking…':'Check now'}</button><span className="small muted" role="status">{checkDone}</span></div>
   </section>
   {release?<section className="details" aria-labelledby="release-heading">
-   <div className="section-heading"><h2 id="release-heading">Sbarbase {release.version}</h2><ClassBadge value={release.class}/></div>
-   <p className="small muted">Tag <code>{release.tag}</code>, commit <code>{release.commit.slice(0,12)}</code>. {release.signed?'Signed by a Sbarbase release key.':'Not signed.'}</p>
+   <div className="section-heading"><h2 id="release-heading">BaseHub {release.version}</h2><ClassBadge value={release.class}/></div>
+   <p className="small muted">Tag <code>{release.tag}</code>, commit <code>{release.commit.slice(0,12)}</code>. {release.signed?'Signed by a BaseHub release key.':'Not signed.'}</p>
    <p>{CLASS_WORDS[release.class].explanation}</p>
    {notes&&notes.text.trim()&&<><h3>What is new</h3><div className="release-notes" lang={notes.language} dir="auto">{notes.text}</div></>}
    {release.reasons.length>0&&<><h3>Why it is classed this way</h3><ul className="plain-list">{release.reasons.map(reason=><li key={reason}>{reason}</li>)}</ul></>}
@@ -230,10 +230,10 @@ export function Updates(){
    {view.refusals.length>0&&<><h3>Why it cannot be installed now</h3><ul className="plain-list refusals">{view.refusals.map(refusal=><li key={refusal}><TriangleAlert aria-hidden="true"/>{refusal}</li>)}</ul></>}
    <Skipped notes={view.skipped}/>
    {installable(release.class)?<div className="actions">{confirm==='install'
-    ?<Confirm title={'Install Sbarbase '+release.version+'?'} action="Install now" busy={sending} disabled={acknowledgement&&!acknowledged}
+    ?<Confirm title={'Install BaseHub '+release.version+'?'} action="Install now" busy={sending} disabled={acknowledgement&&!acknowledged}
       onConfirm={()=>void run('apply',release.version,acknowledgement&&acknowledged)} onCancel={()=>{setConfirm(undefined);setAcknowledged(false);install.restore();}}>
-      <ul className="plain-list"><li>A backup of every environment is taken first.</li><li>The console and your applications pause for a few minutes while Sbarbase restarts.</li><li>If the new version does not start healthy, Sbarbase returns to this version by itself.</li>
-       {acknowledgement&&<li><strong>This update changes your environment databases as it starts.</strong> The way back restores the console's own state only: if Sbarbase returns to this version, environment data may need restoring from the backups taken before the update. <a href={BACKUP_GUIDE} target="_blank" rel="noreferrer">How to restore<ExternalLink aria-hidden="true"/></a></li>}</ul>
+      <ul className="plain-list"><li>A backup of every environment is taken first.</li><li>The console and your applications pause for a few minutes while BaseHub restarts.</li><li>If the new version does not start healthy, BaseHub returns to this version by itself.</li>
+       {acknowledgement&&<li><strong>This update changes your environment databases as it starts.</strong> The way back restores the console's own state only: if BaseHub returns to this version, environment data may need restoring from the backups taken before the update. <a href={BACKUP_GUIDE} target="_blank" rel="noreferrer">How to restore<ExternalLink aria-hidden="true"/></a></li>}</ul>
       {acknowledgement&&<label className="check" htmlFor={acknowledgeId}><input id={acknowledgeId} type="checkbox" checked={acknowledged} onChange={event=>setAcknowledged(event.target.checked)}/>{ACKNOWLEDGEMENT}</label>}</Confirm>
     :<><button ref={install.trigger} className="primary" disabled={!state.enabled} aria-describedby={state.enabled?undefined:reasonsId} onClick={()=>{setAcknowledged(false);setConfirm('install');}}><Download aria-hidden="true"/>Install update</button>
       {!state.enabled&&<p id={reasonsId} className="small muted">{state.reasons.join(' ')}</p>}</>}</div>
@@ -242,7 +242,7 @@ export function Updates(){
      <Commands lines={['docker compose exec sbarbase python3 lab/upgrade.py start --release '+release.tag+' --allow-class rebuild','docker compose up -d --build']}/>
      <p>With the systemd service:</p>
      <Commands lines={['/usr/bin/python3 lab/upgrade.py start --release '+release.tag+' --allow-class rebuild','sudo /usr/bin/python3 lab/install_server.py supervise --apply','sudo systemctl restart sbarbase']}/>
-     <p className="small muted">Give <code>supervise --apply</code> the same options the service was installed with. It installs the new unit; the restart then starts Sbarbase on the release.</p>
+     <p className="small muted">Give <code>supervise --apply</code> the same options the service was installed with. It installs the new unit; the restart then starts BaseHub on the release.</p>
      <p><a href={UPGRADES_GUIDE} target="_blank" rel="noreferrer">Read the upgrades guide<ExternalLink aria-hidden="true"/></a></p></div>
    :<div className="actions"><h3>This release needs a manual migration</h3><p>Follow the upgrades guide on the server before installing it. The console does not install it.</p>
      <p><a href={UPGRADES_GUIDE} target="_blank" rel="noreferrer">Read the upgrades guide<ExternalLink aria-hidden="true"/></a></p></div>}
@@ -250,12 +250,12 @@ export function Updates(){
   {view.newest&&view.newest.version!==release?.version&&<Newest release={view.newest} offered={Boolean(release)} notes={view.skipped}/>}
   {view.last&&<section className="details"><h2>Last update</h2>
    <p><span className={'state '+(view.last.phase==='confirmed'?'applied':view.last.phase==='rollback_failed'||view.last.phase==='failed'?'failed':'running')}>{PHASE_WORDS[view.last.phase]}</span></p>
-   <p className="small muted">From <code>{view.last.from.slice(0,12)}</code> to {view.last.version?'Sbarbase '+view.last.version+' ':''}<code>{view.last.to.slice(0,12)}</code>. Started {formatWhen(view.last.startedAt)}{view.last.finishedAt?', finished '+formatWhen(view.last.finishedAt):''}.{view.last.phase==='rolled_back'&&view.last.automatic?' The way back was automatic.':''}</p>
+   <p className="small muted">From <code>{view.last.from.slice(0,12)}</code> to {view.last.version?'BaseHub '+view.last.version+' ':''}<code>{view.last.to.slice(0,12)}</code>. Started {formatWhen(view.last.startedAt)}{view.last.finishedAt?', finished '+formatWhen(view.last.finishedAt):''}.{view.last.phase==='rolled_back'&&view.last.automatic?' The way back was automatic.':''}</p>
    {view.last.failure&&<p className="notice">{view.last.failure}</p>}
    {view.last.phase==='rollback_failed'&&<p><a href={BACKUP_GUIDE} target="_blank" rel="noreferrer">How to restore from a backup<ExternalLink aria-hidden="true"/></a></p>}
    {view.canRollback&&(confirm==='rollback'
     ?<Confirm title="Roll back to the previous version?" action="Roll back" danger busy={sending} onConfirm={()=>void run('rollback')} onCancel={()=>{setConfirm(undefined);back.restore();}}>
-      <ul className="plain-list"><li>Sbarbase returns to the version it ran before the last update.</li><li>The console and your applications pause for a few minutes while it restarts.</li><li>The backups taken before the update stay where they are.</li></ul></Confirm>
+      <ul className="plain-list"><li>BaseHub returns to the version it ran before the last update.</li><li>The console and your applications pause for a few minutes while it restarts.</li><li>The backups taken before the update stay where they are.</li></ul></Confirm>
     :<div className="actions"><button ref={back.trigger} className="danger" disabled={moving} onClick={()=>setConfirm('rollback')}><Undo2 aria-hidden="true"/>Roll back</button></div>)}
   </section>}
   <Settings updates={updates} settings={view.settings} timezone={view.timezone}/>

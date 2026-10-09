@@ -36,7 +36,7 @@ export function FunctionsSection({path,request,environmentId}:{path:string;reque
      :<button disabled={busy} onClick={()=>setConfirm(fn.name)}><Trash2 aria-hidden="true"/>Delete</button>}</td></tr>)}</tbody></table></div>
    :<Empty>No functions yet. Deploy a Supabase functions folder with the command below, or write one here.</Empty>}
   <h3>Deploy from a project folder</h3>
-  <p className="small muted">From a checkout of Sbarbase, point at your project's <code>supabase/functions</code>. <code>_shared</code> and <code>verify_jwt</code> in <code>config.toml</code> work as with the Supabase CLI.</p>
+  <p className="small muted">From a checkout of BaseHub, point at your project's <code>supabase/functions</code>. <code>_shared</code> and <code>verify_jwt</code> in <code>config.toml</code> work as with the Supabase CLI.</p>
   <div className="form-row"><input readOnly value={command} aria-label="Deploy command"/><button onClick={()=>void copy(command)}><Copy aria-hidden="true"/>Copy</button></div>
   <p className="small muted" role="status">{copied}</p>
   {editing?<div className="provider">

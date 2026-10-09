@@ -42,7 +42,7 @@ export const BACKUP_GUIDE='https://github.com/M7MMAD-OMAR/sbarbase/blob/main/doc
  * the class never depends on colour alone. */
 export const CLASS_WORDS:Record<UpdateClass,{label:string;status:string;explanation:string}>={
  safe:{label:'Safe',status:'ready to install',
-  explanation:'This release changes Sbarbase itself and service images that do not change your environment databases. It can be installed from here, and it returns to this version by itself if it does not start healthy.'},
+  explanation:'This release changes BaseHub itself and service images that do not change your environment databases. It can be installed from here, and it returns to this version by itself if it does not start healthy.'},
  attended:{label:'Needs your confirmation',status:'ready to install after you confirm',
   explanation:'This release updates Auth, Storage or Realtime, which change each environment database when they start. It can be installed from here once you confirm. If it then returns to this version, environment data may need restoring from the backups taken before the update. It is never installed automatically.'},
  rebuild:{label:'Needs a rebuild',status:'needs a manual rebuild',
@@ -52,13 +52,13 @@ export const CLASS_WORDS:Record<UpdateClass,{label:string;status:string;explanat
 
 /** The one line the banner states for an available release. */
 export function availableText(release:Pick<AvailableRelease,'version'|'class'>){
- return `Sbarbase ${release.version} ${CLASS_WORDS[release.class].status}.`;
+ return `BaseHub ${release.version} ${CLASS_WORDS[release.class].status}.`;
 }
 
 /** The one line the banner states for a newer signed release this installation cannot install. */
 export function newestText(release:Pick<NewestRelease,'version'|'class'>){
- return release.class==='manual'?`Sbarbase ${release.version} needs a manual migration.`
-  :`Sbarbase ${release.version} is released, but this installation cannot install it yet.`;
+ return release.class==='manual'?`BaseHub ${release.version} needs a manual migration.`
+  :`BaseHub ${release.version} is released, but this installation cannot install it yet.`;
 }
 
 /** Release notes in the reader's language, falling back to English. */
@@ -273,8 +273,8 @@ export const STAGE_TEXT:Record<Stage,string>={
  checking:'The new version started. Checking that it is healthy.',
  returning:'Returning to the previous version.',
  confirmed:'The update is installed and healthy.',
- rolled_back:'The update did not start, so Sbarbase is back on the previous version. Nothing was lost.',
- rolled_back_by_request:'Sbarbase is back on the previous version.',
+ rolled_back:'The update did not start, so BaseHub is back on the previous version. Nothing was lost.',
+ rolled_back_by_request:'BaseHub is back on the previous version.',
  rollback_failed:'The previous version did not start either. Restore from the backups taken before the upgrade.',
  failed:'The update did not go ahead.',
  refused:'The server did not carry out the request.',
