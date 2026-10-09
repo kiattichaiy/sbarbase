@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 import tempfile
 import unittest
+from host_test_fixture import IsolatedHostCase
 from unittest.mock import Mock, patch
 import durable_runtime as runtime
 import image_identity
@@ -15,8 +16,9 @@ REF = 'docker.io/postgrest/postgrest@' + INDEX
 PIN = {'id': INDEX, 'tag': 'postgrest/postgrest:v1', 'digests': [REF]}
 
 
-class DurableIdentityTests(unittest.TestCase):
+class DurableIdentityTests(IsolatedHostCase):
     def setUp(self):
+        super().setUp()
         self.stack = ExitStack(); self.addCleanup(self.stack.close)
         self.state = Path(self.stack.enter_context(tempfile.TemporaryDirectory()))
         self.stack.enter_context(patch.object(runtime, 'PRIVATE', self.state))
@@ -103,9 +105,11 @@ class DurableIdentityTests(unittest.TestCase):
 
     def test_hba_receives_daemon_id_and_existing_authority_is_not_rewritten(self):
         startup = Mock(); writer = Mock()
-        private = self.state / 'private'; private.mkdir()
+        private = self.state / '.secrets' / 'upstream'
+        private.parent.mkdir(mode=0o700); private.mkdir(mode=0o700)
         (private / 'runtime.json').write_text(json.dumps({'management': {}}))
         with patch.object(runtime, 'PRIVATE', private), patch.object(runtime, 'STATE', self.state), \
+             patch.object(runtime.lab, 'ROOT', self.state), \
              patch.object(runtime.lab, 'docker', self.docker), \
              patch('subprocess.run', return_value=SimpleNamespace(returncode=0)), \
              patch.object(runtime.hba_runtime, 'SourceHBA', return_value=writer) as hba, \

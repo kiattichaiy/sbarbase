@@ -2,17 +2,27 @@
 
 # Server deployment
 
-Updated 2026-10-06: complete current-code verification passed 1449 tests with no failures, errors, warnings or skips and independent actual review. Repairs cover SQLite and HTTPError response closure, tempfile ownership and expected test diagnostics. All 52 preparation cases also passed; native PostgreSQL startup, Cron/Vault restart continuity and physical restore remain unaccepted. See [current status](../reference/status.md) for CI results and evidence scope.
+Current published checkpoint `e08ed3b2684bdf04f0288c7162747a2783177026`: [CI 37600158231](https://github.com/M7MMAD-OMAR/sbarbase/actions/runs/37600158231) passed all four jobs: general checks, Python compatibility, Docker installation and empty-host acceptance. Python 3.12 passed 2102 tests. [Website 37600311118](https://github.com/M7MMAD-OMAR/sbarbase/actions/runs/37600311118) passed build and tests. Empty-host acceptance now runs automatically on main pushes as well as explicit manual requests; pull-request behavior is unchanged.
+
+The [current native checkpoint summary](../evidence/ci-e08ed3b-2026-10-07/summary.json) binds the new Docker artifact to 13 reports and 254 passing checks for project creation, Supabase features, backup/restore, upgrades, rollback and restart. This is the new run's fresh-only artifact, not the earlier baafbad archive or historical installation transcription. Its runtime evidence is bound to core code commit `e08ed3b2684bdf04f0288c7162747a2783177026`; a subsequent documentation publication preserves that identity and does not establish runtime acceptance for later code changes.
+
+The [fresh empty-host evidence](../evidence/ci-e08ed3b-2026-10-07/empty-host/summary.json) contains six reports and one run manifest, with 58 unique checklist checks and a separately reported 21-check live Auth bootstrap. The identical rehearsal handoff copy adds no checks. The native log and final script guards establish that the shipped system unit became active and its console answered after the rehearsal. The earlier JSON unit snapshot records the deliberate inactive rehearsal phase; it is not the final restored service state. This is a fresh Ubuntu runner installation checkpoint, not physical reboot, Kali verification, complete lost-source recovery, cold/warm Cron continuity or production acceptance. Static-serving and TLS stub checks retain their separate scope; a public certificate is not proven.
+
+A separate [Fedora 44 systemd descriptor probe](../evidence/systemd-scope-fd-probe-2026-10-07/summary.json) preserved five descriptor identities across same-PID Python exec under bounded systemd scope custody. Its two-file public archive contains the probe and summary. It launched no guest or Docker container and accepts only that Python descriptor behavior, not a Linux guest, reboot or portable production deployment.
+
+Historical integration checkpoint before e08ed3b, 2026-10-07: Docker installation CI passed after `baafbad`, with 2086 Python tests and 254 current native checks. Manual standalone-service acceptance failed at the socket configuration handoff; its later rerun passed on e08ed3b. Full recovery and production remain unaccepted. See [current status](../reference/status.md); the following checkpoint paragraphs preserve historical snapshots and their limits.
+
+Historical checkpoint, 2026-10-06: complete snapshot verification passed 1449 tests with no failures, errors, warnings or skips and independent actual review. Repairs cover SQLite and HTTPError response closure, tempfile ownership and expected test diagnostics. All 52 preparation cases also passed; native PostgreSQL startup, Cron/Vault restart continuity and physical restore remain unaccepted. See [current status](../reference/status.md) for CI results and evidence scope.
 
 The separate public55 V3 role has actual MET: 25 component and 30 pump tests passed, original 290 and added 4 actual mode/byte captures matched, and all three known helpers were removed with no unresolved resources. Public BusyBox V8 help metadata also has actual MET: fixed-path Bash 5.3.3 and BusyBox 1.37.0 help returned zero, with its one helper removed. Neither result accepts private request operation, timeout timing/signal behavior, installed binary source provenance, candidate startup, cold/warm Vault or Cron continuity, physical restore or production.
 
-The preserved warning-window V4 negative run reported 1447 ordinary tests OK but six ResourceWarnings, native 1 and observed window 839 for every warning. Three records have exact sqlite3.Connection type; three report tempfile.py line 484 with NoneType source. Observation windows are not allocation causes, and the three tempfile origins remain unknown. Fresh complete source/identity/mode/full bindings, final-revision CI and manually dispatched empty-host acceptance remain required; published 0e745394 CI and Website results retain only their earlier revision scope.
+The preserved warning-window V4 negative run reported 1447 ordinary tests OK but six ResourceWarnings, native 1 and observed window 839 for every warning. Three records have exact sqlite3.Connection type; three report tempfile.py line 484 with NoneType source. Observation windows are not allocation causes, and the three tempfile origins remain unknown. At that historical checkpoint, fresh complete source/identity/mode/full bindings, final-revision CI and manually dispatched empty-host acceptance remained required; published 0e745394 CI and Website results retain only their earlier revision scope.
 
 Runbook for the native Linux installation path. The primary container workflow is described in [Install with Docker](docker.md). September workstation and local-VM rehearsals below retain their original scope; they are not fresh production acceptance.
 
-The user's computer is currently used as a local Linux Docker server for isolated declared verification. Published `0e745394` passed Docker installation CI, while empty-host acceptance was skipped and needs a fresh manual dispatch. No independent public-server pilot is established. Current startup tooling defines only an explicit prepare-only material-handoff status; no actual native material-preparation run is accepted by this guide. The earlier V9 initV2 run passed 52 focused tests but its historical actual 1447-case full regression failed with one failure and 15 errors.
+The user's computer is the selected local Linux Docker server for isolated declared verification. Historical published `0e745394` passed Docker installation CI, while empty-host acceptance was skipped at that checkpoint. No independent public-server pilot is established. Current startup tooling defines only an explicit prepare-only material-handoff status; no actual native material-preparation run is accepted by this guide. The earlier V9 initV2 run passed 52 focused tests but its historical actual 1447-case full regression failed with one failure and 15 errors.
 
-Earlier mode, scratch and warning verification attempts remain historical refusals bound to their own source and date. Resource ownership and fixture diagnostics were repaired, and fresh complete verification now passes 1449 tests. This does not transfer native startup or recovery evidence from another run. The [status history](../reference/status.md) preserves the earlier observations and their limits.
+Earlier mode, scratch and warning verification attempts remain historical refusals bound to their own source and date. Resource ownership and fixture diagnostics were repaired, and complete verification of that earlier snapshot passed 1449 tests. This does not transfer native startup or recovery evidence from another run. The [status history](../reference/status.md) preserves the earlier observations and their limits.
 
 ## Prerequisites
 
@@ -24,7 +34,7 @@ Earlier mode, scratch and warning verification attempts remain historical refusa
 | Git checkout of this repository | state and lock files live in the checkout by default |
 | Headroom: on an empty server 4352 MiB available (1792 MiB for the database, Storage and management Auth containers plus a 2560 MiB reserve) and at least 2 CPU cores; more as environments are added. The preflight states the exact figure and refuses below it | The requirement is derived from the placement the next start runs: on an empty host the three system containers at their tier limits, afterwards every retained container at its own limits (each environment adds 512 MiB and 0.5 CPU of ceilings for its Auth and REST), plus the reserve, plus, on an installation that has been moved, the measured cost of the running source stage (`docs/evidence/source-stage-footprint.json`). CPU ceilings may add up to twice the cores after one core is kept for the host; the cgroup pressure gate refuses new work under real contention. The development host's retained split placement still needs 5888 MiB of limits plus the reserve. The preflight prints the composition, so a refusal names each term |
 | A service account that exists, holding the checkout | the unit runs as that account (`User=`), so `--apply` refuses an account that does not exist instead of installing a unit that cannot start. The shipped default is `sbarbase`; name the server's account with `--service-user`, `--home` and `--bun-dir` (also forwarded by `deploy/server-acceptance.sh`) |
-| Docker socket access for the service user | the supervisor starts and stops owned containers only. The unit reaches the socket its Docker context resolves to; a host whose context points elsewhere (a Docker Desktop socket, for example) must forward `DOCKER_HOST` in the unit, and the preflight names the endpoint it tried when the daemon is unreachable |
+| Docker socket access for the service user | Admission pins the declared local Unix socket, default `/var/run/docker.sock`. Docker contexts, remote endpoints and Desktop are outside this candidate. Nondefault socket and data root must be declared consistently for the service and acceptance run; see the [host contract](../engineering/HOST-PREFLIGHT.md) |
 
 Pinned images are pulled by digest on install; no floating tags are used. See
 [upstream update policy](../engineering/UPSTREAM-UPDATE-POLICY.md) before changing any pin.
@@ -105,11 +115,13 @@ acceptance path can name the server's account too.
 
 The unit carries what updates need ([upgrades](upgrades.md)):
 
-- Its first `ExecStartPre` is the upgrade guard (`lab/upgrade_guard.py`, or the copy
+- Its first `ExecStartPre` runs `deploy/host-preflight.sh --runtime`. Read-only host
+  admission refuses before locks, upgrade changes or leftover runtime cleanup on every restart.
+- The next `ExecStartPre` is the upgrade guard (`lab/upgrade_guard.py`, or the copy
   an upgrade left in `.lab/upgrades/guard.py`). It runs before the preflight and
   before any code of the version the checkout holds, and moves the checkout back
   when a new version keeps failing its start.
-- Its second `ExecStartPre` (`lab/leftover_runtime.py`) handles a supervisor that
+- After the guard, `ExecStartPre` (`lab/leftover_runtime.py`) handles a supervisor that
   was killed (SIGKILL, the OOM killer) instead of stopping. Docker, not the unit,
   owns the containers, so they keep running, and the preflight used to refuse every
   later start because owned containers were running. This step stops them the way
@@ -126,8 +138,9 @@ The unit carries what updates need ([upgrades](upgrades.md)):
   needs several starts to go back, and `TimeoutStartSec=600`, because the guard's
   way back reinstalls dependencies before the preflight runs.
 
-A unit installed before these lines existed has no guard before the preflight; the
-supervisor then runs the guard itself. Without the second line, a start after an
+A unit installed before host admission was added must be rendered and reinstalled
+with `supervise --apply` to obtain the admission boundary on every restart.
+Without the leftover cleanup line, a start after an
 unclean stop still refuses at the preflight; stop the leftover containers once with
 `/usr/bin/python3 lab/leftover_runtime.py` as the service account. Reinstall the
 unit with `supervise --apply` when you move to the version that has them.
@@ -137,20 +150,17 @@ one rather than failing obscurely:
 
 1. **The service account exists.** Create it and give it the checkout, or install
    with `--service-user`/`--home`/`--bun-dir`.
-2. **The service can reach a Docker daemon.** A system service does not inherit
-   the operator's shell, so it uses the socket its docker context resolves to. On
-   a server with native Docker that is `/var/run/docker.sock`, and the service
-   account must be in the `docker` group. Where the account's context points at a
-   desktop or per-user socket, point the unit at the system socket with a drop-in:
-   `Environment=DOCKER_HOST=unix:///var/run/docker.sock` in
-   `/etc/systemd/system/sbarbase.service.d/docker.conf`. One endpoint has to
-   serve both the service and the acceptance run: the unit carries no
-   `DOCKER_HOST` of its own, and the run's steps use the account's context, so
-   name the same socket for the run with `--docker-host` (below) whenever the
-   drop-in is needed. The preflight reports
-   `Docker daemon unreachable from this process (tried <endpoint>)`, and when the
-   daemon is unreachable it no longer guesses about pinned images or the existing
-   containers.
+2. **The service can reach the declared local Docker daemon.** The default is
+   `/var/run/docker.sock`, with socket permission for the service account.
+   `DOCKER_CONTEXT` is refused. For a nondefault local socket or daemon data root,
+   set `SBARBASE_DOCKER_SOCKET` and `SBARBASE_DOCKER_DATA_ROOT` in the service's
+   drop-in and acceptance environment. Any `DOCKER_HOST` must match that socket.
+   A drop-in uses `Environment=SBARBASE_DOCKER_SOCKET=/run/docker-custom.sock`,
+   `Environment=DOCKER_HOST=unix:///run/docker-custom.sock` and
+   `Environment=SBARBASE_DOCKER_DATA_ROOT=/srv/docker` with the actual existing paths.
+   The first admission step refuses missing or mismatched paths without creating them.
+   When Docker is unreachable, preflight reports the endpoint and does not guess
+   about pinned images or existing containers.
 3. **The host has the memory.** The next start needs the limits of the
    containers it runs plus a 2560 MiB reserve: 4352 MiB on an empty server, more
    with each environment, 8.8 GiB for the development host's retained split
@@ -224,20 +234,20 @@ install would leave files the service cannot use. The script does that
 substitution itself, so the single `sudo` invocation above is still the whole
 command.
 
-That substitution has one consequence worth naming: the step account's Docker
-context decides which daemon the preflight, the checks and the rehearsal reach,
-and `sudo` does not carry the invoking shell's `DOCKER_HOST` into the script. On a
-host whose account context resolves elsewhere (Docker Desktop, a non-default
-context, a socket only root's context knows), pass the socket explicitly:
+Admission selects the declared local socket explicitly and forwards the declared
+profile, socket and data root when a step runs as the installation account. Saved
+Docker contexts do not select the endpoint. `sudo` can discard shell exports, so
+supply the same public deployment inputs explicitly to the root invocation and
+service drop-in. The default endpoint can also be restated:
 
 ```
 deploy/server-acceptance.sh --rehearse --docker-host unix:///var/run/docker.sock
 ```
 
-The flag exports `DOCKER_HOST` for every step, including the unit steps, so the
-run verifies the same daemon the service will use. Without it the preflight names
-the endpoint it tried and stops, rather than checking a daemon the service cannot
-reach.
+For a custom local endpoint, declare its existing socket and actual Docker data
+root, then pass the matching `--docker-host`. A mismatch or context override
+refuses before rehearsal effects. The native route still requires host Python,
+Bun and systemd; the primary [Docker route](docker.md) uses the public launcher.
 
 An acceptance run writes its rehearsal to
 `docs/evidence/server-acceptance-rehearsal.json` and copies it to
@@ -435,3 +445,7 @@ The step by step versions are [backup and restore](backup-and-restore.md) and [u
 - Bootstrap creates the first operator; invitations are a separate legacy
   feature with scoped local-VM evidence. Management MFA and login rate limiting
   remain absent. See [status](../reference/status.md) for the historical scope.
+
+## Private directory permissions
+
+Installation and startup create `.secrets` and `.secrets/upstream` with mode `0700`, owned by the account running the service. Symlinks and existing directories with a different owner or mode are refused. If a new version refuses an older checkout whose parent was created as `0755`, stop the installation normally and verify both directories are real directories owned by the service account before setting only these two directory modes to `0700`. The shipped Docker image runs as root inside the container. This repair does not require changing ownership or internal file modes; retain all secret data and backups. `Runtime private directory ownership or mode refused` and `Runtime private directory identity changed` require correcting permissions or the checkout path before retrying.

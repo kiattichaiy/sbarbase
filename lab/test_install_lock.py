@@ -8,6 +8,7 @@ import fcntl
 import json
 import tempfile
 import unittest
+from host_test_fixture import IsolatedHostCase
 from pathlib import Path
 from unittest.mock import patch
 
@@ -18,12 +19,14 @@ def result(returncode=0,stdout='',stderr=''):
     return type('R',(),{'returncode':returncode,'stdout':stdout,'stderr':stderr})()
 
 
-class InstallLockHandoffTests(unittest.TestCase):
+class InstallLockHandoffTests(IsolatedHostCase):
     def setUp(self):
+        super().setUp()
         self.directory=tempfile.TemporaryDirectory();self.addCleanup(self.directory.cleanup)
         self.state=Path(self.directory.name)/'upstream'
         self.state.mkdir(parents=True)
-        self.private=Path(self.directory.name)/'private'
+        self.root=Path(self.directory.name)
+        self.private=self.root/'.secrets'/'upstream'
         self.probes=[]
 
     def install(self,install_result=None,extra=None):
@@ -42,6 +45,7 @@ class InstallLockHandoffTests(unittest.TestCase):
             return result()
 
         with patch.object(install_server,'preflight',return_value=[]), \
+             patch.object(install_server,'ROOT',self.root), \
              patch.object(install_server,'STATE',self.state), \
              patch.object(install_server,'PRIVATE',self.private), \
              patch.object(install_server,'pinned_images',return_value=[]), \
@@ -61,6 +65,7 @@ class InstallLockHandoffTests(unittest.TestCase):
 
     def test_the_installer_releases_the_lock_even_when_a_step_fails(self):
         with patch.object(install_server,'preflight',return_value=[]), \
+             patch.object(install_server,'ROOT',self.root), \
              patch.object(install_server,'STATE',self.state), \
              patch.object(install_server,'PRIVATE',self.private), \
              patch.object(install_server,'pinned_images',return_value=[]), \
@@ -82,7 +87,7 @@ class InstallLockHandoffTests(unittest.TestCase):
                 held.close()
 
 
-class PlanTests(unittest.TestCase):
+class PlanTests(IsolatedHostCase):
     def test_the_plan_names_the_lock_handoff(self):
         source=(Path(__file__).resolve().parent/'install_server.py').read_text()
         self.assertIn('take the installation operation lock',source)

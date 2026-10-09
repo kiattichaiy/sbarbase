@@ -21,31 +21,47 @@ class ScriptFixture:
 
     This tests shell control flow, not Docker or server readiness.
     """
-    def __init__(self, directory, preflight_status=0):
+    def __init__(self, directory, preflight_status=0, admission_status=0):
+        if admission_status not in (0,1):
+            raise ValueError('fixture admission status must be 0 or 1')
         self.root=Path(directory)
         self.root.mkdir(parents=True,exist_ok=True)
         for name in ('deploy','lab','bin'):
             (self.root/name).mkdir()
         self.script=self.root/'deploy'/'server-acceptance.sh'
         shutil.copy2(SCRIPT,self.script)
+        # This double checks admission ordering, not host capabilities.
+        admission_result = (
+            'printf "%s\\n" "Docker profile refused [prerequisite_missing]: Required utility docker is unavailable. Action: Install the documented Docker and Linux utility prerequisites before retrying." >&2\nexit 1\n'
+            if admission_status else 'printf "%s\\n" "fixture host admission --runtime"\nexit 0\n')
+        (self.root/'deploy'/'host-preflight.sh').write_text(
+            '#!/bin/sh\nset -eu\n'
+            '[ "$#" -eq 1 ] && [ "$1" = --runtime ] || exit 64\n'
+            +admission_result)
+        self.socket=self.root/'fixture-docker.sock'
+        self.socket.touch()
+        self.docker_calls=self.root/'docker-calls.log'
         (self.root/'deploy'/'sbarbase.service').write_text('[Unit]\n')
         (self.root/'lab'/'install_server.py').write_text(
             'import sys\nassert sys.argv[1:]==["check"]\n'
             +f'print("fixture preflight status {preflight_status}")\n'
             +f'raise SystemExit({preflight_status})\n')
         for name,source in {
-            'docker':'#!/bin/sh\nif [ "$1" = "info" ]; then echo linux; else echo Docker-fixture; fi\n',
+            'docker':'#!/bin/sh\nprintf "%s\\n" "$*" >> "$FIXTURE_DOCKER_CALLS"\nif [ "$1" = "info" ]; then echo linux; else echo Docker-fixture; fi\n',
             'bun':'#!/bin/sh\necho Bun-fixture\n',
         }.items():
             path=self.root/'bin'/name
             path.write_text(source)
             path.chmod(0o755)
 
-    def run(self,*args):
+    def run(self,*args,env=None):
         environment=dict(os.environ)
         environment['PATH']=str(self.root/'bin')+os.pathsep+environment.get('PATH','')
+        environment['SBARBASE_DOCKER_SOCKET']=str(self.socket)
+        environment['FIXTURE_DOCKER_CALLS']=str(self.docker_calls)
+        if env:environment.update(env)
         return subprocess.run([str(self.script),'--python',sys.executable,*args],
-                              capture_output=True,text=True,timeout=30,env=environment)
+                              capture_output=True,text=True,timeout=30,cwd=self.root,env=environment)
 
 
 def run(*args,env=None):
@@ -55,6 +71,50 @@ def run(*args,env=None):
 
 
 class ServerAcceptanceTests(unittest.TestCase):
+    def test_admitted_socket_alias_stays_bound_when_switching_installation_account(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture=ScriptFixture(directory)
+            alias=fixture.root/'socket-alias'
+            alias.symlink_to(fixture.socket)
+            shutil.copy2(ROOT/'lab'/'docker_profile.py',fixture.root/'lab'/'docker_profile.py')
+            (fixture.root/'lab'/'install_server.py').write_text(
+                'import os,sys,docker_profile\n'
+                'assert sys.argv[1:]==["check"]\n'
+                'profile=docker_profile.from_environment()\n'
+                'assert profile.socket==os.environ["FIXTURE_CANONICAL_SOCKET"]\n'
+                'assert os.environ["DOCKER_HOST"]=="unix://"+profile.socket\n'
+                'assert os.environ["FIXTURE_ACCOUNT_SWITCH"]=="yes"\n'
+                'print("fixture canonical endpoint preserved")\n')
+            (fixture.root/'bin'/'id').write_text('#!/bin/sh\n[ "$1" = -u ] || exit 64\necho 0\n')
+            (fixture.root/'bin'/'sudo').write_text(
+                '#!/bin/sh\n[ "$1" = -u ] && [ "$2" = fixture-account ] && [ "$3" = -H ] || exit 64\n'
+                'shift 3\nexport FIXTURE_ACCOUNT_SWITCH=yes\nexec "$@"\n')
+            for name in ('id','sudo'):(fixture.root/'bin'/name).chmod(0o755)
+            (fixture.root/'deploy'/'host-preflight.sh').write_text(
+                '#!/bin/sh\nset -eu\n'
+                'selected=$(readlink -e -- "$SBARBASE_DOCKER_SOCKET")\n'
+                'requested=$(readlink -e -- "${DOCKER_HOST#unix://}")\n'
+                '[ "$selected" = "$requested" ] || exit 1\n')
+            result=fixture.run('--service-user','fixture-account','--docker-host','unix://'+str(alias),
+                env={'SBARBASE_DOCKER_SOCKET':str(alias),'FIXTURE_CANONICAL_SOCKET':str(fixture.socket)})
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertIn('fixture canonical endpoint preserved',result.stdout)
+
+    def test_different_socket_refuses_before_installation_account_or_docker_calls(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture=ScriptFixture(directory)
+            other=fixture.root/'other-endpoint';other.touch()
+            (fixture.root/'deploy'/'host-preflight.sh').write_text(
+                '#!/bin/sh\nset -eu\n'
+                'selected=$(readlink -e -- "$SBARBASE_DOCKER_SOCKET")\n'
+                'requested=$(readlink -e -- "${DOCKER_HOST#unix://}")\n'
+                '[ "$selected" = "$requested" ] || { echo "host_endpoint_mismatch" >&2; exit 1; }\n')
+            result=fixture.run('--docker-host','unix://'+str(other))
+            self.assertNotEqual(result.returncode,0)
+            self.assertIn('host_endpoint_mismatch',result.stderr)
+            self.assertFalse(fixture.docker_calls.exists())
+            self.assertNotIn('fixture preflight status',result.stdout)
+
     def test_the_script_is_executable_and_strict(self):
         self.assertTrue(SCRIPT.exists())
         self.assertTrue(SCRIPT.stat().st_mode & stat.S_IXUSR)
@@ -72,9 +132,19 @@ class ServerAcceptanceTests(unittest.TestCase):
         self.assertIn('unknown argument',result.stderr)
 
     def test_a_missing_prerequisite_names_the_tool(self):
-        result=run(env={'PATH':'/usr/bin:/bin'})
-        self.assertNotEqual(result.returncode,0)
-        self.assertIn('is not on PATH',result.stderr)
+        with tempfile.TemporaryDirectory() as directory:
+            fixture=ScriptFixture(directory,admission_status=1)
+            result=fixture.run('--rehearse')
+            self.assertNotEqual(result.returncode,0)
+            self.assertIn('Docker profile refused [prerequisite_missing]',result.stderr)
+            self.assertIn('Required utility docker is unavailable',result.stderr)
+            self.assertIn('Action: Install the documented Docker and Linux utility prerequisites',result.stderr)
+            self.assertIn('host admission refused before prerequisites or rehearsal effects',result.stderr)
+            self.assertFalse(fixture.docker_calls.exists())
+            output=result.stdout+result.stderr
+            for later in ('== prerequisites','== read-only preflight','fixture preflight status',
+                          '== console build','== release the supervised installation for the rehearsal'):
+                self.assertNotIn(later,output)
 
     def test_a_world_readable_bootstrap_file_is_refused(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -85,6 +155,10 @@ class ServerAcceptanceTests(unittest.TestCase):
             result=fixture.run('--bootstrap-file',str(path))
             self.assertNotEqual(result.returncode,0)
             self.assertIn('mode 600',result.stderr)
+            self.assertIn('fixture host admission --runtime',result.stdout)
+            self.assertEqual(fixture.docker_calls.read_text().splitlines(), [
+                '--version', 'info --format {{.Name}} {{.OSType}}',
+                'info --format {{.OSType}}'])
             self.assertNotIn('placeholder',result.stdout+result.stderr)
 
     def test_the_acceptance_rehearsal_keeps_its_own_evidence_file(self):
@@ -106,6 +180,10 @@ class ServerAcceptanceTests(unittest.TestCase):
                 fixture=ScriptFixture(directory,status)
                 result=fixture.run()
                 output=result.stdout+result.stderr
+                self.assertIn('fixture host admission --runtime',result.stdout)
+                self.assertLess(result.stdout.index('fixture host admission --runtime'),
+                                result.stdout.index('ok: docker '))
+                self.assertNotIn('error retrieving current directory',output)
                 self.assertIn('ok: docker daemon linux',output)
                 self.assertIn('ok: '+sys.executable,output)
                 self.assertIn('read-only preflight',output)

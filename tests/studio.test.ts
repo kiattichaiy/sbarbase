@@ -21,14 +21,14 @@ test('each environment is its own Studio origin',()=>{
 });
 
 test('tickets and sessions are signed, bound to one environment and one kind, and expire',()=>{
- const ticket=signStudio(key,{runtime:A,actor:'alice',expires:Date.now()+60_000,kind:'ticket'});
+ const ticket=signStudio(key,{runtime:A,actor:'alice',epoch:0,expires:Date.now()+60_000,kind:'ticket'});
  expect(verifyStudio(key,ticket,A,'ticket')?.actor).toBe('alice');
  expect(verifyStudio(key,ticket,B,'ticket')).toBeNull();
  expect(verifyStudio(key,ticket,A,'session')).toBeNull();
  expect(verifyStudio(Buffer.alloc(32,8),ticket,A,'ticket')).toBeNull();
  expect(verifyStudio(key,ticket,A,'ticket',Date.now()+120_000)).toBeNull();
  const [body,signature]=ticket.split('.');
- const forged=Buffer.from(JSON.stringify({runtime:A,actor:'mallory',expires:Date.now()+60_000,kind:'ticket'})).toString('base64url');
+ const forged=Buffer.from(JSON.stringify({runtime:A,actor:'mallory',epoch:0,expires:Date.now()+60_000,kind:'ticket'})).toString('base64url');
  expect(verifyStudio(key,forged+'.'+signature,A,'ticket')).toBeNull();
  expect(verifyStudio(key,body+'.'+signature+'.x',A,'ticket')).toBeNull();
 });
@@ -70,10 +70,10 @@ test('the console starts, stops and opens Studio only for owners and admins of a
 test('the Studio origin admits a ticket once, then only its session cookie, and never another environment',async()=>{
  const seen:Request[]=[];const inits:(RequestInit|undefined)[]=[];
  let members=new Set(['alice']);
- const proxy=studioProxy({key:()=>key,allowed:actor=>members.has(actor),upstream:runtime=>runtime===A?'http://studio-a.internal:3000':undefined,
+ const proxy=studioProxy({key:()=>key,epoch:()=>0,allowed:actor=>members.has(actor),upstream:runtime=>runtime===A?'http://studio-a.internal:3000':undefined,
   transport:(async(input:URL|RequestInfo,init?:RequestInit)=>{seen.push(new Request(input,init));inits.push(init);
    return new Response('studio page',{status:200,headers:{'set-cookie':'studio_theme=dark; Path=/'}});}) as typeof fetch});
- const ticket=signStudio(key,{runtime:A,actor:'alice',expires:Date.now()+60_000,kind:'ticket'});
+ const ticket=signStudio(key,{runtime:A,actor:'alice',epoch:0,expires:Date.now()+60_000,kind:'ticket'});
  const enter=await proxy(new Request(`http://${studioHost(A)}:8790/__sbarbase/enter?ticket=${encodeURIComponent(ticket)}`));
  expect(enter.status).toBe(302);
  expect(enter.headers.get('location')).toBe('/project/default');
@@ -87,11 +87,11 @@ test('the Studio origin admits a ticket once, then only its session cookie, and 
  expect(page.status).toBe(200);
  expect(page.headers.getSetCookie()).toEqual(['studio_theme=dark; Path=/']);
  expect(seen[0]!.url).toBe('http://studio-a.internal:3000/project/default?x=1');
+ // The proxy must not decode the body: Bun's fetch decompresses by default, which would
+ // forward plaintext under a stale content-encoding header.
+ expect((inits[0] as {decompress?:boolean}|undefined)?.decompress).toBe(false);
  // Studio never sees Sbarbase's own cookie.
  expect(seen[0]!.headers.get('cookie')).toBe('studio_theme=dark');
- // The proxy must not decode the body: Bun's fetch decompresses by default, which would
- // leave a stale content-encoding header over already-decoded bytes.
- expect((inits[0] as {decompress?:boolean}|undefined)?.decompress).toBe(false);
  // A session for A does not open B, even if a browser sent it there.
  expect((await proxy(new Request(`http://${studioHost(B)}/project/default`,{headers:{cookie:session}}))).status).toBe(401);
  // A ticket for A does not enter B.
